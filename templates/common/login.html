@@ -1,11 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Login</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body style="font-family: system-ui; margin:2rem;">
+{% extends "base.html" %}
+{% block content %}
   <h2>Login</h2>
 
   <form method="POST">
@@ -29,5 +23,4 @@
       {% endif %}
     {% endwith %}
   </div>
-</body>
-</html>
+{% endblock %}

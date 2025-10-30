@@ -1,13 +1,34 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Points Store</title>
+{% extends "base.html" %}
+
+{% block title %}Points Store - TTT Rewards{% endblock %}
+
+{% block styles %}
+  {{ super() }} {# <-- IMPORTANT: include base styles #}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/truck-rewards.css') }}">
-</head>
-<body>
-  <h1>My Points Store</h1>
-  <div id="products" class="product-grid"></div>
   <script src="{{ url_for('static', filename='js/truck-rewards.js') }}"></script>
-</body>
-</html>
+{% endblock %}
+
+{% block content %}
+  <h1>My Points Store</h1>
+
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  {# Optional: wrap page-specific styles in a namespace to avoid bleed #}
+  <section class="points-store">
+    <div style="margin-bottom: 2rem; max-width: 500px;">
+      <form id="search-form" style="display: flex; gap: 0.5rem; max-width: none;">
+        <input type="text" id="search-input" placeholder="Search for items..." style="width: 100%;">
+        <input type="number" id="min-price" placeholder="Min $" style="width: 80px;">
+        <input type="number" id="max-price" placeholder="Max $" style="width: 80px;">
+        <button type="submit" style="width: auto; padding: 0.4rem 1rem;">Search</button>
+      </form>
+    </div>
+
+    <div id="products" class="product-grid"></div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }} {# keep base scripts #}
+  <script src="{{ url_for('static', filename='js/truck-rewards.js') }}"></script>
+{% endblock %}

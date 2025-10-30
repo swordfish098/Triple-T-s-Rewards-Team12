@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+
+  <div style="display:flex; align-items:center; justify-content:space-between;">
+    <h1>{{ title }}</h1>
+    <a class="btn"
+       href="{{ url_for('administrator_bp.export_audit_csv', event_type=event_type, start=start, end=end) }}">
+      ⬇︎ Download CSV
+    </a>
+  </div>
+
+  {% include "partials/filter.html" with context %}
+
+  {% if logs|length == 0 %}
+    <p class="muted">No events yet.</p>
+  {% else %}
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 18%">Time (UTC)</th>
+          <th style="width: 14%">Type</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in logs %}
+          <tr>
+            <td>{{ e.CREATED_AT.strftime('%Y-%m-%d %H:%M:%S') if e.CREATED_AT else '' }}</td>
+
+            {% if title == "Login Activity" %}
+              {% set status = (e.DETAILS or "").split(" ", 1)[0] %}
+              {% set cls = status.lower() %}
+              <td><span class="badge {{ cls }}">{{ status }}</span></td>
+            {% else %}
+              <td>{{ e.EVENT_TYPE }}</td>
+            {% endif %}
+
+            <td><code>{{ e.DETAILS or "" }}</code></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <p style="margin-top:1rem;">
+    <a class="btn" href="{{ url_for('administrator_bp.audit_menu') }}">← Back to Audit Logs</a>
+  </p>
+{% endblock %}

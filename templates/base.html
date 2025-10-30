@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}TTT Rewards{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+    // 1️⃣ Read saved theme, or follow system preference
+    (function() {
+      const saved = localStorage.getItem("theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const theme = saved || (prefersDark ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+      document.documentElement.style.backgroundColor = theme === "dark" ? "#222629" : "#ffffff";
+    })();
+  </script>
+  
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+  {% block styles %}{% endblock %}
+</head>
+
+<body>
+
+    {# include universal navbar #}
+  {% include "partials/navbar.html" %}
+
+  {# Define pages that should NOT have a sidebar #}
+  {% set no_sidebar_endpoints = [
+      'common.index', 
+      'auth.login', 
+      'auth.register', 
+      'common.reset_password', 
+      'common.reset_with_token',
+      'about_bp.view_about'
+  ] %}
+  {% set show_sidebar = current_user.is_authenticated %}
+
+
+
+  {# 
+     This is the main container. If you have the required CSS (body: flex-direction: column; 
+     and .app-layout: flex-grow: 1;), this structure works. 
+  #}
+  <div class="app-layout {% if show_sidebar %}with-sidebar{% endif %}">
+      {% if show_sidebar %}
+          {% include 'partials/sidebar.html' %}
+      {% endif %}
+
+      <main class="app-main-content">
+          <div class="container">
+              {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                      {% for category, message in messages %}
+                          <div class="flash-messages {{ category }}">{{ message }}</div>
+                      {% endfor %}
+                  {% endif %}
+              {% endwith %}
+              
+              {% block content %}{% endblock %}
+          </div>
+      </main>
+  </div>
+
+  {% include "partials/footer.html" %}
+
+  
+  {% block scripts %}
+    <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script>
+      (function () {
+        try {
+          const savedTheme = localStorage.getItem('theme') || 'light';
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (savedTheme === 'dark' || (savedTheme === 'system' && prefersDark)) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {
+          console.error('Error loading theme:', e);
+        }
+      })();
+    </script>
+    <script>
+      function fetchNotificationCount() {
+        if ("{{ current_user.is_authenticated }}" === "True") {
+          fetch('{{ url_for("notification_bp.get_unread_count") }}')
+            .then(response => response.ok ? response.json() : {})
+            .then(data => {
+              const countElement = document.getElementById('notification-count');
+              if (data && data.count > 0) {
+                countElement.textContent = data.count;
+                countElement.style.display = 'inline-block'; 
+              } else {
+                countElement.textContent = '';
+                countElement.style.display = 'none'; 
+              }
+            })
+            .catch(error => console.error('Error fetching notifications:', error));
+        }
+      }
+
+      function fetchCartCount() {
+        if ("{{ current_user.is_authenticated }}" === "True") {
+          fetch('{{ url_for("rewards_bp.cart_count") }}')
+            .then(response => response.json())
+            .then(data => {
+              const countElement = document.getElementById('cart-item-count');
+              if (data && data.count > 0) {
+                countElement.textContent = `(${data.count})`;
+              } else {
+                countElement.textContent = '';
+              }
+            })
+            .catch(error => console.error('Error fetching cart count:', error));
+        }
+      }
+
+      // Initial fetch and start polling
+      fetchNotificationCount();
+      fetchCartCount();
+      setInterval(fetchNotificationCount, 30000);
+      setInterval(fetchCartCount, 30000);
+    </script>
+    <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+  {% endblock %}
+</body>
+</html>

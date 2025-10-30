@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Sponsor Rewards Store - TTT Rewards{% endblock %}
+
+{% block styles %}
+  {{ super() }}
+  {# Re-uses the existing CSS from the original rewards store #}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/truck-rewards.css') }}">
+{% endblock %}
+
+{% block content %}
+  {# The sponsor's name could be passed from the backend for a more personal touch #}
+  <h1>Sponsor Rewards Store</h1>
+  <p>Your points for this store are specific to this sponsor.</p>
+  <a href="{{ url_for('rewards_bp.view_cart', sponsor_id=sponsor_id) }}" class="btn btn-primary mb-3">View Your Cart</a>
+
+  {# This token is important for making secure POST requests (e.g., adding to cart) #}
+  <input type="hidden" id="csrf_token" name="csrf_token" value="{{ csrf_token() }}">
+  {# Hidden input to store the sponsor_id, making it accessible to JavaScript #}
+  <input type="hidden" id="sponsor_id" name="sponsor_id" value="{{ sponsor_id }}">
+
+
+  <section class="points-store">
+    {# The search form remains the same as the original store #}
+    <div style="margin-bottom: 2rem; max-width: 500px;">
+      <form id="search-form" style="display: flex; gap: 0.5rem; max-width: none;">
+        <input type="text" id="search-input" placeholder="Search for items..." style="width: 100%;">
+        <input type="number" id="min-price" placeholder="Min $" style="width: 80px;">
+        <input type="number" id="max-price" placeholder="Max $" style="width: 80px;">
+        <button type="submit" style="width: auto; padding: 0.4rem 1rem;">Search</button>
+      </form>
+    </div>
+
+    {# This is where the products will be dynamically loaded by your JavaScript #}
+    <div id="products" class="product-grid">
+        </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  {# Re-uses the existing JavaScript from the original rewards store #}
+  <script src="{{ url_for('static', filename='js/truck-rewards.js') }}"></script>
+
+  <script>
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const sponsorId = document.getElementById('sponsor_id').value;
+      if (typeof initializeStore === 'function') {
+        initializeStore(sponsorId);
+      } else {
+        console.error('Error: The store initialization function is not available.');
+      }
+    });
+  </script>
+{% endblock %}

@@ -1,0 +1,116 @@
+/* =========================================================
+   Triple T’s Rewards – THEME TOKENS (Accessible Palette)
+   Light mode by default; Dark mode via [data-theme="dark"]
+   Compliant with WCAG 2.0 AA contrast requirements
+   ========================================================= */
+
+/* ---- Base (LIGHT) ---- */
+:root {
+  /* Brand palette */
+  --color-olive-green: #61892F;   /* Primary */
+  --color-lime-green:  #86C232;   /* Accent / CTA */
+  --color-deep-gray:   #222629;   /* Dark BG */
+  --color-medium-gray: #474B4F;   /* Panels / Header / Sidebar */
+  --color-light-gray:  #6B6E70;   /* Muted text */
+  --color-white:       #FFFFFF;
+
+  /* Accessible text tokens */
+  --text-on-brand: #FFFFFF;       /* AA on olive/lime */
+  --link-color: #4A6723;          /* AA on white */
+  --link-color-hover: #61892F;    /* Brand olive hover */
+
+  /* Core theme */
+  --bg: var(--color-white);
+  --text: #222629;
+  --muted: var(--color-light-gray);
+  --surface: #F5F6F7;
+  --border: #E5E7EB;
+
+  --brand: var(--color-olive-green);
+  --brand-accent: var(--color-lime-green);
+  --brand-contrast: var(--color-white);
+
+  /* Nav / Footer */
+  --nav-bg: var(--color-medium-gray);
+  --nav-text: #ECEFF1;
+  --nav-link: #ECEFF1;
+  --nav-link-active: var(--brand-accent);
+  --nav-bg-hover: #585C60;
+
+  /* Sidebar */
+  --sidebar-bg: var(--color-medium-gray);
+  --sidebar-text: #E7EAED;
+  --sidebar-hover-bg: rgba(97,137,47,0.22);
+  --sidebar-active-bg: rgba(134,194,50,0.24);
+  --sidebar-active-border: var(--brand-accent);
+
+  /* Tables / Chips / Badges */
+  --table-head-bg: #F0F2F4;
+  --chip-bg: #EAEFF1;
+  --chip-border: rgba(0,0,0,0.08);
+
+  /* Status */
+  --success: var(--color-olive-green);
+  --warning: #FFA726;
+  --error:   #E53935;
+
+  /* Shadows / Focus */
+  --shadow-header: 0 2px 4px rgba(0,0,0,0.18);
+  --shadow-raised: 0 6px 16px rgba(0,0,0,0.06);
+  --focus-ring: 0 0 0 3px rgba(134, 194, 50, 0.45);
+
+  /* Z-index */
+  --z-header: 1000;
+  --z-sidebar: 900;
+  --z-overlay: 1100;
+}
+
+/* ---- Dark Mode ---- */
+[data-theme="dark"] {
+  --bg: var(--color-deep-gray);
+  --text: #E6E8EA;
+  --muted: #BEC3C6;
+  --surface: #2B2F33;
+  --border: #3A3F43;
+
+  --brand: var(--color-lime-green);
+  --brand-accent: var(--color-olive-green);
+  --brand-contrast: var(--color-deep-gray);
+
+  --text-on-brand: #0F1419;
+  --link-color: #B8E08C;
+  --link-color-hover: #D2F2AE;
+
+  --nav-bg: var(--color-deep-gray);
+  --nav-text: #DCE0E2;
+  --nav-link: #DCE0E2;
+  --nav-link-active: var(--color-lime-green);
+  --nav-bg-hover: #31363A;
+
+  --sidebar-bg: #2A2E32;
+  --sidebar-text: #E6E8EA;
+  --sidebar-hover-bg: rgba(134,194,50,0.16);
+  --sidebar-active-bg: rgba(134,194,50,0.28);
+  --sidebar-active-border: var(--color-lime-green);
+
+  --table-head-bg: #2D3136;
+  --chip-bg: #32373C;
+  --chip-border: rgba(255,255,255,0.08);
+
+  --success: var(--color-olive-green);
+  --warning: #FFB84D;
+  --error: #EF5350;
+
+  --shadow-header: 0 2px 6px rgba(0,0,0,0.5);
+  --shadow-raised: 0 10px 24px rgba(0,0,0,0.35);
+  --focus-ring: 0 0 0 3px rgba(97, 137, 47, 0.55);
+}
+
+/* ---- Shared base ---- */
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+  padding: 0;
+}
+.muted { color: var(--muted); }

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Sponsor Users</h1>
+
+{% if users %}
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 120px;">USER_CODE</th>
+        <th>Username</th>
+        <th style="width: 140px;">Role</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.USER_CODE }}</td>
+        <td>{{ u.USERNAME }}</td>
+        <td>{{ u.USER_TYPE }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="muted">No sponsor users yet.</p>
+{% endif %}
+
+<p style="margin-top:1rem;">
+  <a class="btn btn-primary" href="{{ url_for('sponsor_bp.create_sponsor_user') }}">+ New Sponsor User</a>
+</p>
+{% endblock %}

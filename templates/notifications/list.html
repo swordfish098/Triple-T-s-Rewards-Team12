@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}My Notifications - TRIPLE T's Trucking Rewards{% endblock %}
+
+{% block content %}
+<section class="notifications-page container">
+  <h1>Notifications</h1>
+  <div class="list-actions">
+    <a href="{{ url_for('notification_bp.send_message') }}" class="btn btn-primary">
+      New Message
+    </a>
+  </div>
+
+  <div class="notifications-container">
+    {% if notifications %}
+      {% for notification in notifications %}
+        <div class="notification-item card {% if not notification.READ_STATUS %}unread{% endif %}">
+          <div class="notification-header">
+            <span class="sender">
+              From:
+              <strong>
+                {% if notification.sender %}
+                  {{ notification.sender.USERNAME }}
+                {% else %}
+                  System/Unknown
+                {% endif %}
+              </strong>
+            </span>
+            <span class="timestamp">
+              {{ notification.TIMESTAMP.strftime('%b %d, %Y at %I:%M %p') }}
+            </span>
+          </div>
+          <p class="message">{{ notification.MESSAGE }}</p>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="no-notifications card text-center">
+        <p>You currently have no notifications.</p>
+        <p>Keep up the great work to earn points and rewards! 🚚</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block styles %}{% endblock %}

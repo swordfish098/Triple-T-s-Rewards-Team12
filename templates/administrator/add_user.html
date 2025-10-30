@@ -1,10 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Add New User</title>
-</head>
-<body style="font-family: system-ui; margin:2rem;">
+{% extends "base.html" %}
+{% block content %}
     <h2>Add New User</h2>
     <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -12,18 +7,20 @@
         <label for="username">Username:</label>
         <input type="text" id="username" name="username" required>
         <br><br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <br><br>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
         <br><br>
         <label for="role">Role:</label>
         <select id="role" name="role" required>
             <option value="driver">Driver</option>
             <option value="sponsor">Sponsor</option>
-            <option value="admin">Admin</option>
+            <option value="administrator">Admin</option>
         </select>
         <br><br>
-        <button type="submit">Create User</button>
+        <button type="submit" class="btn">Create User</button>
     </form>
     <p><a href="{{ url_for('administrator_bp.dashboard') }}">Back to Dashboard</a></p>
-</body>
-</html>
+{% endblock %}

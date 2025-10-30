@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Audit Logs</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Log</th>
+        <th>Description</th>
+        <th style="width: 1%;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Login Activity</td>
+        <td>Successful sign-ins, failed attempts, and logouts.</td>
+        <td class="actions">
+          <a href="{{ url_for('administrator_bp.view_audit_logs', event_type='login') }}">View</a>
+        </td>
+      </tr>
+      <tr>
+        <td>Sales by Sponsor</td>
+        <td>Rollup of sales grouped by sponsor (placeholder).</td>
+        <td class="actions">
+          <a href="{{ url_for('administrator_bp.view_audit_logs', event_type='sales_by_sponsor') }}">View</a>
+        </td>
+      </tr>
+      <tr>
+        <td>Sales by Driver</td>
+        <td>Rollup of sales grouped by driver (placeholder).</td>
+        <td class="actions">
+          <a href="{{ url_for('administrator_bp.view_audit_logs', event_type='sales_by_driver') }}">View</a>
+        </td>
+      </tr>
+      <tr>
+        <td>Invoices</td>
+        <td>Invoice lifecycle audit (placeholder).</td>
+        <td class="actions">
+          <a href="{{ url_for('administrator_bp.view_audit_logs', event_type='invoices') }}">View</a>
+        </td>
+      </tr>
+      <tr>
+        <td>Driver Point Tracking</td>
+        <td>Earn/redemption actions recorded for drivers (placeholder).</td>
+        <td class="actions">
+          <a href="{{ url_for('administrator_bp.view_audit_logs', event_type='driver_points') }}">View</a>
+        </td>
+      </tr>
+      <tr>
+        <td>Bulk Loading</td>
+        <td>Tracking of bulk data load operations (new feature).</td>
+        <td class="actions">
+          <a href="{{ url_for('administrator_bp.view_audit_logs', event_type='bulk_load') }}">View</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    <a href="{{ url_for('administrator_bp.dashboard') }}" class="btn btn-outline">
+      ← Back to Admin Dashboard
+    </a>
+  </p>
+{% endblock %}

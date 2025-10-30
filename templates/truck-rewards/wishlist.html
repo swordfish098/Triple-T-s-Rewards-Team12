@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}My Wishlist - TRIPLE T's{% endblock %}
+{% block content %}
+  <h1>My Wishlist</h1>
+  
+  {% if current_user.wishlist_items %}
+    <div class="product-grid">
+      {% for item in current_user.wishlist_items %}
+        <div class="product-card">
+          <img src="{{ item.image_url or 'https://i.ebayimg.com/images/g/placeholder/s-l225.jpg' }}" alt="{{ item.title }}">
+          <div class="title">{{ item.title }}</div>
+          <div class="price">${{ "%.2f"|format(item.price) }}</div>
+          <div class="points">{{ item.points }} points</div>
+          <form method="POST" action="{{ url_for('rewards_bp.remove_from_wishlist', item_id=item.id) }}" onsubmit="return confirm('Remove this item from your wishlist?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Remove</button>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>Your wishlist is empty.</p>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    
+    <div class="card shadow-lg mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-primary text-white text-center py-3">
+            <h2 class="mb-0">Organization Approval Application</h2>
+        </div>
+        <div class="card-body p-4">
+
+            {# Logic to display current status and organization name #}
+            {% if sponsor %}
+                <p class="text-center mb-4">
+                    Your current organization status is: 
+                    <span class="badge 
+                        {% if sponsor.STATUS == 'Approved' %} bg-success 
+                        {% elif sponsor.STATUS == 'Rejected' %} bg-danger 
+                        {% else %} bg-warning text-dark {% endif %}
+                        p-2 fs-6">
+                        {{ sponsor.STATUS }}
+                    </span>
+                </p>
+                
+                {% if sponsor.STATUS == 'Approved' %}
+                    <div class="alert alert-success text-center" role="alert">
+                        Your organization is **APPROVED**! Use this form to update your organization name if necessary.
+                    </div>
+                {% elif sponsor.STATUS == 'Pending' %}
+                    <div class="alert alert-info text-center" role="alert">
+                        Your application is currently **PENDING** review by the administrator. Thank you for your patience!
+                    </div>
+                {% elif sponsor.STATUS == 'Rejected' %}
+                    <div class="alert alert-danger text-center" role="alert">
+                        Your previous application was **REJECTED**. Please submit a new organization name below.
+                    </div>
+                {% endif %}
+
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('sponsor_bp.apply_for_organization') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label for="org_name" class="form-label fw-bold">Organization Name</label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="org_name" 
+                           name="org_name" 
+                           value="{{ sponsor.ORG_NAME if sponsor.ORG_NAME else '' }}" 
+                           required 
+                           placeholder="e.g., Triple-T Trucking Rewards">
+                    <div class="form-text">This is the name drivers will see when applying for sponsorship.</div>
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">Submit for Approval / Update Details</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Loading Logs{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Bulk Loading Audit Logs</h2>
+    
+    <div class="card">
+        <div class="card-header">
+            <h4>Recent Bulk Loading Events</h4>
+        </div>
+        <div class="card-body">
+            {% if logs %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date/Time</th>
+                            <th>Event Type</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log.CREATED_AT.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                <span class="badge bg-{% if 'success' in log.EVENT_TYPE %}success{% elif 'failed' in log.EVENT_TYPE %}danger{% elif 'error' in log.EVENT_TYPE %}warning{% else %}info{% endif %}">
+                                    {{ log.EVENT_TYPE }}
+                                </span>
+                            </td>
+                            <td>{{ log.DETAILS }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                No bulk loading events found in the audit log.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('administrator.dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

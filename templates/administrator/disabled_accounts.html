@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Inactive Users - TTT Rewards{% endblock %}
+
+{% block styles %}
+  {{ super() }} {# Ensure theme.css + style.css are included #}
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+  />
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <div class="card">
+
+      {# Flash messages using your alert styles #}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              {% if category == 'success' %}
+                <div class="alert success" role="alert">{{ message }}</div>
+              {% elif category == 'danger' %}
+                <div class="alert error" role="alert">{{ message }}</div>
+              {% elif category == 'warning' %}
+                <div class="alert warning" role="alert">{{ message }}</div>
+              {% else %}
+                <div class="alert" role="status">{{ message }}</div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:1rem;">
+        <a href="{{ url_for('administrator_bp.dashboard') }}" class="btn btn-outline" aria-label="Back to Administrator Dashboard">
+          ← Back
+        </a>
+        <h1 style="margin:0;">Inactive Users</h1>
+      </div>
+
+      <form id="filter-form" method="GET" action="{{ url_for('administrator_bp.disabled_accounts') }}" style="display:flex; flex-direction:column; gap:.5rem; margin-bottom:1rem;">
+        <div style="display:flex; align-items:center; gap:.5rem;">
+          <input type="text" name="search" placeholder="Search by username..." value="{{ request.args.get('search', '') }}" aria-label="Search by username" class="input" style="flex:1; padding:.5rem;">
+          <button type="submit" class="btn btn-outline">Search</button>
+          <button id="filter-toggle" type="button" class="btn btn-outline" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center;" title="Filter by role" aria-label="Filter by role">
+            <i class="fa fa-filter"></i>
+          </button>
+        </div>
+
+        <div id="role-filter" style="display:none; flex-wrap:wrap; gap:.5rem; background:#f7f7f7; padding:1rem; border-radius:6px;">
+          <select name="role" class="input" style="padding:.5rem;">
+            <option value="">All Roles</option>
+            <option value="admin" {% if request.args.get('role') == 'admin' %}selected{% endif %}>Admin</option>
+            <option value="sponsor" {% if request.args.get('role') == 'sponsor' %}selected{% endif %}>Sponsor</option>
+            <option value="driver" {% if request.args.get('role') == 'driver' %}selected{% endif %}>Driver</option>
+          </select>
+          <button type="submit" class="btn btn-outline">Apply</button>
+          <a href="{{ url_for('administrator_bp.disabled_accounts') }}" class="btn btn-outline">Reset</a>
+        </div>
+      </form>
+
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          const toggle = document.getElementById('filter-toggle');
+          const roleSection = document.getElementById('role-filter');
+          toggle.addEventListener('click', () => {
+            roleSection.style.display = roleSection.style.display === 'none' ? 'flex' : 'none';
+          });
+        });
+      </script>
+
+      {% if accounts %}
+        <table aria-describedby="inactive-users-caption">
+          <caption id="inactive-users-caption" class="text-muted" style="text-align:left; padding:.5rem 0;">
+            List of currently inactive users
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Username</th>
+              <th scope="col">Name</th>
+              <th scope="col">Email</th>
+              <th scope="col">Type</th>
+              <th scope="col">Joined</th>
+              <th scope="col" style="width: 120px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for user in accounts %}
+            <tr>
+              <td><strong>{{ user.USERNAME }}</strong></td>
+              <td>{{ user.FNAME }} {{ user.LNAME }}</td>
+              <td>{{ user.EMAIL }}</td>
+              <td><span class="badge">{{ user.USER_TYPE }}</span></td>
+              <td>{{ user.CREATED_AT.strftime('%Y-%m-%d %H:%M') }}</td>
+              <td>
+                {% if user.USER_CODE != current_user.USER_CODE %}
+                <form
+                  method="POST"
+                  action="{{ url_for('administrator_bp.enable_user', user_id=user.USER_CODE) }}"
+                  onsubmit="return confirm('Are you sure you want to ENABLE {{ user.USERNAME }}? This will set the account to active.');"
+                  style="display:inline-block; margin:0;"
+                >
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button
+                    type="submit"
+                    class="btn btn-success"
+                    aria-label="Enable user {{ user.USERNAME }}"
+                  >
+                    Enable
+                  </button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="box" role="status">
+          <p class="text-muted" style="margin:0;">No deactivated users found.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+{% endblock %}

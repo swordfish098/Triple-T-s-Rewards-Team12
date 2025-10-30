@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Two-Factor Authentication (2FA) Setup</h2>
+
+  <p>To add extra security, scan this QR code with Google Authenticator, Microsoft Authenticator, or Authy.</p>
+
+
+
+  <div style="margin: 1rem 0;">
+    <img alt="Authenticator QR Code" src="{{ qr_data_url }}" style="max-width:220px; border:1px solid #ccc; padding:8px; background:#fff;">
+  </div>
+
+  <p>If you can’t scan the QR code, enter this secret key manually:</p>
+  <pre style="font-size:1.2rem; padding:.5rem; background:#f7f7f7; border:1px solid #ddd; display:inline-block;">
+    {{ secret }}
+  </pre>
+
+  <a class="btn" href="{{ url_for('auth.twofa_setup') }}" class="btn btn-dash">Set up Two-Factor Auth</a>
+
+  <form method="post" action="{{ url_for('auth.twofa_verify') }}" style="margin-top:1rem;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="token">Enter the 6-digit code from your authenticator app:</label>
+    <input id="token" name="token" inputmode="numeric" pattern="\d{6}" maxlength="6" required>
+    <button type="submit" class="btn btn-primary">Verify & Enable 2FA</button>
+  </form>
+
+  <p style="margin-top:1rem; font-size:.9rem; color:#555;">
+    Once verified, you’ll be asked for a code every time you log in.
+  </p>
+{% endblock %}

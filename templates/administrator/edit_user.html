@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Edit User: {{ user.USERNAME }} - TTT Rewards{% endblock %}
+
+{% block styles %}
+  {{ super() }} {# Ensure theme.css + style.css are included #}
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <div class="card">
+
+      {# Flash messages using your alert styles #}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              {% if category == 'success' %}
+                <div class="alert success" role="alert">{{ message }}</div>
+              {% elif category == 'danger' %}
+                <div class="alert error" role="alert">{{ message }}</div>
+              {% elif category == 'warning' %}
+                <div class="alert warning" role="alert">{{ message }}</div>
+              {% else %}
+                <div class="alert" role="status">{{ message }}</div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:1rem;">
+        <a href="{{ url_for('administrator_bp.accounts') }}" class="btn btn-outline" aria-label="Back to Accounts">
+          ← Back
+        </a>
+        <h1 style="margin:0;">Edit User</h1>
+        <div class="spacer" style="flex:1;"></div>
+        <span class="badge" aria-label="Editing user">{{ user.USERNAME }}</span>
+      </div>
+
+      {# ===== USER DETAIL UPDATE FORM ===== #}
+      <form method="POST"
+            action="{{ url_for('administrator_bp.edit_user', user_id=user.USER_CODE) }}"
+            novalidate
+            style="margin-bottom:1.25rem;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <h2 style="margin:.25rem 0 1rem 0;">User Details</h2>
+
+        <div class="form-group">
+          <label for="user_code">User Code (System ID)</label>
+          <input id="user_code" name="user_code" type="text" value="{{ user.USER_CODE }}" readonly
+                 aria-readonly="true"
+                 class="input"
+                 style="cursor:not-allowed; background: var(--surface); color: var(--muted); font-weight:600;">
+        </div>
+
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input id="username" name="username" type="text" value="{{ user.USERNAME }}" required>
+        </div>
+
+        <div class="form-group">
+          <label for="fname">First Name</label>
+          <input id="fname" name="fname" type="text" value="{{ user.FNAME }}" required>
+        </div>
+
+        <div class="form-group">
+          <label for="lname">Last Name</label>
+          <input id="lname" name="lname" type="text" value="{{ user.LNAME }}" required>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input id="email" name="email" type="email" value="{{ user.EMAIL }}" required>
+        </div>
+
+        <div class="form-group">
+          <label for="user_type">User Role</label>
+          <select id="user_type" name="user_type" required>
+            {% for role_name in (roles.ADMINISTRATOR, roles.DRIVER, roles.SPONSOR) %}
+              <option value="{{ role_name }}" {% if user.USER_TYPE == role_name %}selected{% endif %}>
+                {{ role_name.capitalize() }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" aria-label="Save user details">
+          Save User Details
+        </button>
+      </form>
+
+      {# ===== PASSWORD RESET FORM ===== #}
+      <form method="POST"
+            action="{{ url_for('administrator_bp.reset_user_password', user_id=user.USER_CODE) }}"
+            onsubmit="return confirm('Are you sure you want to reset the password for {{ user.USERNAME }}? The current password will be lost.');"
+            novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <h2 style="margin:.25rem 0 1rem 0;">Password Management</h2>
+
+        <p class="text-muted" id="pw-help" style="margin-bottom:.75rem;">
+          Click the button below to generate a new, secure, random password for this user.
+          The new password will be displayed only once.
+        </p>
+
+        <button type="submit"
+                class="btn btn-warning"
+                aria-describedby="pw-help"
+                aria-label="Generate and reset password for {{ user.USERNAME }}">
+          Generate &amp; Reset Password
+        </button>
+      </form>
+
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+{% endblock %}

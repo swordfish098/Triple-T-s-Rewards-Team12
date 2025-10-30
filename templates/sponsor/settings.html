@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="app-main-content container">
+  <h1>Store Settings</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash-messages {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST" class="form-styled">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-group">
+      <label for="ebay_category_id">eBay Category ID:</label>
+      <input
+        type="text"
+        id="ebay_category_id"
+        name="ebay_category_id"
+        class="input-field"
+        value="{{ settings.ebay_category_id or '' }}"
+        placeholder="Enter eBay Category ID"
+        required
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="point_ratio">Points per Dollar:</label>
+      <input
+        type="number"
+        id="point_ratio"
+        name="point_ratio"
+        class="input-field"
+        min="1"
+        step="1"
+        value="{{ settings.point_ratio or '' }}"
+        placeholder="Enter number of points per $1"
+        required
+      >
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+      <a href="{{ url_for('sponsor_bp.dashboard') }}" class="btn btn-outline">← Back to Dashboard</a>
+    </div>
+  </form>
+</main>
+{% endblock %}

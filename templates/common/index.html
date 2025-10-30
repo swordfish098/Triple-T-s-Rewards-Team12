@@ -1,26 +1,7 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>TRIPLE T's TRUCKING REWARDS</title>
-  </head>
-  <body style="font-family: system-ui; margin:2rem;">
-    <h1>TRIPLE T's TRUCKING REWARDS</h1>
-    <p>This is a bare-bones project skeleton.</p>
-    <ul>
-      <li><a href="{{ url_for('driver_bp.dashboard') }}">Driver Dashboard (placeholder)</a></li>
-      <li><a href="{{ url_for('sponsor_bp.dashboard') }}">Sponsor Dashboard (placeholder)</a></li>
-      <li><a href="{{ url_for('administrator_bp.dashboard') }}">Administrator Dashboard (placeholder)</a></li>
-      <li><a href="{{ url_for('rewards_bp.store') }}">Truck Rewards Store (placeholder)</a></li>
-      <li><a href="{{ url_for('about.dashboard') }}">About Page (placeholder)</a></li>
-      <li>
-        {% if current_user.is_authenticated %}
-          Logged in as {{ current_user.USERNAME }}
-          (<a href="{{ url_for('auth.logout') }}">Logout</a>)
-        {% else %}
-          <a href="{{ url_for('auth.login') }}">Login</a>
-        {% endif %}
-      </li>
-    </ul>
-  </body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Home - TRIPLE T's Trucking Rewards{% endblock %}
+
+{% block content %}
+  <h1>TRIPLE T's TRUCKING REWARDS</h1>
+{% endblock %}

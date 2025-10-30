@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Pending Driver Applications - TTT Rewards{% endblock %}
+
+{% block styles %}
+  {{ super() }} {# Ensure theme.css + style.css are included #}
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <div class="card">
+      <h1>Pending Driver Applications</h1>
+
+      {# Flash messages using your alert styles #}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              {% if category == 'success' %}
+                <div class="alert success" role="alert">{{ message }}</div>
+              {% elif category == 'danger' %}
+                <div class="alert error" role="alert">{{ message }}</div>
+              {% elif category == 'warning' %}
+                <div class="alert warning" role="alert">{{ message }}</div>
+              {% else %}
+                <div class="alert" role="status">{{ message }}</div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% if applications %}
+        <table aria-describedby="pending-apps-caption">
+          <caption id="pending-apps-caption" class="text-muted" style="text-align:left; padding:.5rem 0;">
+            Review and decide on pending driver sponsorship applications
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Application ID</th>
+              <th scope="col">Driver ID</th>
+              <th scope="col">Reason</th>
+              <th scope="col">Submitted At</th>
+              <th scope="col" style="width: 200px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in applications %}
+              <tr>
+                <td>{{ a.APPLICATION_ID }}</td>
+                <td>{{ a.DRIVER_ID }}</td>
+                <td>
+                  {{ a.REASON or "No reason provided" }}
+                </td>
+                <td>
+                  {{ a.APPLIED_AT.strftime('%Y-%m-%d %H:%M') if a.APPLIED_AT else "" }}
+                </td>
+                <td>
+                  <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+                    {# Accept (POST) #}
+                    <form method="POST"
+                          action="{{ url_for('sponsor_bp.driver_decision', app_id=a.APPLICATION_ID, decision='accept') }}"
+                          onsubmit="return confirm('Accept application {{ a.APPLICATION_ID }}?');"
+                          style="margin:0;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn btn-success" aria-label="Accept application {{ a.APPLICATION_ID }}">
+                        Accept
+                      </button>
+                    </form>
+
+                    {# Reject (POST) #}
+                    <form method="POST"
+                          action="{{ url_for('sponsor_bp.driver_decision', app_id=a.APPLICATION_ID, decision='reject') }}"
+                          onsubmit="return confirm('Reject application {{ a.APPLICATION_ID }}?');"
+                          style="margin:0;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn btn-danger" aria-label="Reject application {{ a.APPLICATION_ID }}">
+                        Reject
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="box" role="status">
+          <p class="text-muted" style="margin:0;">No pending applications.</p>
+        </div>
+      {% endif %}
+    </div>
+    <div class="spacer"></div>
+    <a href="{{ url_for('sponsor_bp.dashboard') }}" class="btn btn-outline">← Back to Dashboard</a>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Loading{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Bulk User Loading</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Instructions</h3>
+        </div>
+        <div class="card-body">
+            <p>Upload a pipe-delimited text file to create multiple users at once.</p>
+            <p><strong>Important:</strong> Organizations must be created before creating sponsors or drivers for that organization.</p>
+            <p>Format for the file:</p>
+            <ul>
+                <li><strong>O|Organization Name</strong> - Create an organization</li>
+                <li><strong>S|Organization Name|First Name|Last Name|Email Address</strong> - Create a sponsor user for an existing organization</li>
+                <li><strong>D|Organization Name|First Name|Last Name|Email Address</strong> - Create a driver user for an existing organization</li>
+            </ul>
+            <p><em>Note: Driver license numbers will be added separately after bulk loading.</em></p>
+            <p>Example (in proper order):</p>
+            <pre>O|Triple T's Trucking
+S|Triple T's Trucking|Jane|Smith|jane.smith@triplets.com
+D|Triple T's Trucking|John|Doe|john.doe@gmail.com</pre>
+            
+            <p>
+                <a href="{{ url_for('bulk_loading_bp.download_template') }}" class="btn btn-info">
+                    <i class="fas fa-download"></i> Download Template
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Upload File</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="form-group">
+                    <label for="file">Select File (.txt)</label>
+                    <input type="file" class="form-control-file" id="file" name="file" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary mt-3">
+                    <i class="fas fa-upload"></i> Upload and Process
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {% if results %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Results</h3>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <h4>Summary</h4>
+                <ul>
+                    <li>Total records processed: {{ results.total }}</li>
+                    <li>Successfully processed: {{ results.success }}</li>
+                    <li>Failed records: {{ results.failed }}</li>
+                    <li>Organizations created: {{ results.organizations_created }}</li>
+                    <li>Sponsors created: {{ results.sponsors_created }}</li>
+                    <li>Drivers created: {{ results.drivers_created }}</li>
+                </ul>
+            </div>
+            
+            {% if log_filename %}
+            <p>
+                <a href="{{ url_for('bulk_loading_bp.download_log', filename=log_filename) }}" class="btn btn-success">
+                    <i class="fas fa-file-download"></i> Download Detailed Log
+                </a>
+            </p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

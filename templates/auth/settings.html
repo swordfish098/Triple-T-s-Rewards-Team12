@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Account Settings</h2>
+
+  <a href="{{ url_for('auth.twofa_setup') }}" class="btn btn-dash">Enable Two-Factor Authentication</a>
+    <!-- you can add more links like change password, notifications, etc. -->
+  </ul>
+{% endblock %}

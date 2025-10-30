@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+  <main class="app-main-content container">
+    <h1>Edit About Information</h1>
+
+    <form method="POST" class="form-styled">
+      {{ form.csrf_token }}
+
+      <div class="form-group">
+        <label for="team_num">Team Number:</label>
+        {{ form.team_num(class="input-field") }}
+      </div>
+
+      <div class="form-group">
+        <p><label for="version_num">Version Number:</label></p>
+        {{ form.version_num(class="input-field") }}
+      </div>
+
+      <div class="form-group">
+        <p><label for="product_name">Product Name:</label></p>
+        {{ form.product_name(class="input-field") }}
+      </div>
+
+      <div class="form-group">
+        <p><label for="product_desc">Product Description:</label></p>
+        {{ form.product_desc(class="input-field") }}
+      </div>
+
+      <div class="spacer"></div>
+
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+      <a href="{{ url_for('about_bp.view_about') }}" class="btn btn-outline">Cancel</a>
+    </form>
+  </main>
+{% endblock %}

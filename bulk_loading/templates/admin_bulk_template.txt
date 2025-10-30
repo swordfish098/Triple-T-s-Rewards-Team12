@@ -1,0 +1,24 @@
+O|Organization Name
+S|Organization Name|First Name|Last Name|Email Address
+D|Organization Name|First Name|Last Name|Email Address
+
+# Format descriptions:
+# IMPORTANT: Organizations must be created before creating sponsors or drivers
+#
+# O|Organization Name
+# - Create an organization record in the database
+#
+# S|Organization Name|First Name|Last Name|Email Address
+# - Create a sponsor user for an existing organization
+# - The organization must exist before creating sponsors
+#
+# D|Organization Name|First Name|Last Name|Email Address
+# - Create a driver user for an existing organization
+# - The organization must exist before creating drivers
+# - License numbers will be added separately after bulk loading
+# - Driver applications to sponsors will be handled separately
+
+# Example (proper order):
+# O|Triple T's Trucking
+# S|Triple T's Trucking|Jane|Smith|jane.smith@triplets.com
+# D|Triple T's Trucking|John|Doe|john.doe@gmail.com

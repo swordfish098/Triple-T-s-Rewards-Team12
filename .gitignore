@@ -1,18 +1,39 @@
-# Python
+# A. Make sure .gitignore ignores all the junk
+cat > .gitignore <<'EOF'
+.DS_Store
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-# Virtual environments
-venv/
-.env
-*.env
-
-# Flask instance folder
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+htmlcov/
+coverage/
+# local DBs / instances
 instance/
-
-# OS / IDE
-.DS_Store
+instance/*.db
+# envs
+venv/
+.venv/
+env/
+# secrets
+.env
+.env.*
+# IDE
 .vscode/
 .idea/
+# build & local wheels you accidentally committed
+build/
+dist/
+source/                # <-- you have this huge tree; ignore it
+static/dist/
+static/generated/
+EOF
+
+# B. Untrack EVERYTHING (keeps files on disk, only clears index)
+git rm -r --cached .
+
+# C. Re-add only what’s allowed by .gitignore
+git add -A
+git commit -m "Stop tracking generated/ignored files via .gitignore"

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Create Sponsor User</h1>
+
+<form method="POST" style="max-width: 420px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <label>Username</label>
+  <input name="username" required class="input" placeholder="new_sponsor_username">
+
+  <p class="muted" style="margin:.5rem 0 1rem;">
+    Role is fixed to <strong>SPONSOR</strong> for this form.
+  </p>
+
+  <button class="btn" type="submit">Create</button>
+  <a class="btn" href="{{ url_for('sponsor_bp.list_sponsor_users') }}">View Sponsor Users</a>
+</form>
+{% endblock %}

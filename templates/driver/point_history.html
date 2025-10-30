@@ -1,0 +1,26 @@
+{# triple-ts-rewards/triple-t-s-rewards/Triple-T-s-Rewards-72ca7a46f1915a7f669f3692e9b77d23b248eaee/templates/driver/point_history.html #}
+{% extends "base.html" %}
+{% block content %}
+  <h1>Point History</h1>
+  {% if events %}
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 20%">Date</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+          <tr>
+            <td>{{ event.CREATED_AT.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            <td>{{ event.DETAILS }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No point history found.</p>
+  {% endif %}
+  <p><a href="{{ url_for('driver_bp.dashboard') }}" class="btn btn-outline">Back to Dashboard</a></p>
+{% endblock %}

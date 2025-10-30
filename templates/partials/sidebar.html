@@ -1,0 +1,123 @@
+<aside class="app-sidebar">
+    <ul class="sidebar-list">
+        
+        {# --- UNIVERSAL LINKS / NON-COLLAPSIBLE ITEMS --- #}
+        
+        {% if current_user.is_authenticated %}
+            {# For Sponsors: Link directly to their own store preview #}
+            {% if current_user.USER_TYPE == 'sponsor' %}
+                <li>
+                    <a href="{{ url_for('sponsor_bp.view_my_store') }}" class="sidebar-link {{ 'active' if 'view_my_store' in request.endpoint else '' }}">
+                        My Points Store
+                    </a>
+                </li>
+            {# For Drivers: Link to a new route that will automatically find a store #}
+            {% elif current_user.USER_TYPE == 'driver' %}
+                <li>
+                    <a href="{{ url_for('driver_bp.redirect_to_store') }}" class="sidebar-link">
+                        View Sponsor Stores
+                    </a>
+                </li>
+            {% endif %}
+        {% endif %}
+
+        {# Example: About Page #}
+        <li>
+            <a href="{{ url_for('about_bp.view_about') }}" class="sidebar-link {{ 'active' if 'about_bp.view_about' in request.endpoint else '' }}">
+                About Page
+            </a>
+        </li>
+
+
+        {# --- DASHBOARDS EXPANDABLE SECTION --- #}
+        
+        {# Determine if any dashboard link is currently active to auto-expand the menu #}
+        {% set dashboard_endpoints = [
+            'administrator_bp.dashboard', 
+            'sponsor_bp.dashboard', 
+            'driver_bp.dashboard'
+        ] %}
+        {% set is_dashboard_active = request.endpoint in dashboard_endpoints %}
+
+        <li class="has-submenu">
+            {# The main link/button that triggers the expansion #}
+            <a href="#" class="sidebar-link submenu-toggle {% if is_dashboard_active %}expanded{% endif %}" data-target="dashboard-menu">
+                Dashboards
+                <span class="icon">▼</span> 
+            </a>
+        
+            {# The collapsible content container #}
+            {# Use is_dashboard_active to start the menu expanded if a sub-link is active #}
+            <ul id="dashboard-menu" class="submenu {% if not is_dashboard_active %}collapsed{% endif %}">
+                
+                {# Admin Dashboard Link: Only visible to 'administrator' #}
+                {% if current_user.is_authenticated and current_user.USER_TYPE == 'administrator' %}
+                        <a href="{{ url_for('administrator_bp.dashboard') }}" class="sidebar-link sub-link {{ 'active' if request.endpoint == 'administrator_bp.dashboard' else '' }}">
+                            Admin Dashboard
+                        </a>
+                {% endif %}
+
+                {# Sponsor Dashboard Link: Visible to 'administrator' and 'sponsor' #}
+                {% if current_user.is_authenticated and current_user.USER_TYPE in ['administrator', 'sponsor'] %}
+                        <a href="{{ url_for('sponsor_bp.dashboard') }}" class="sidebar-link sub-link {{ 'active' if request.endpoint == 'sponsor_bp.dashboard' else '' }}">
+                            Sponsor Dashboard
+                        </a>
+                {% endif %}
+
+                {# Driver Dashboard Link: Visible to all three roles #}
+                {% if current_user.is_authenticated and current_user.USER_TYPE in ['administrator', 'sponsor', 'driver'] %}
+                        <a href="{{ url_for('driver_bp.dashboard') }}" class="sidebar-link sub-link {{ 'active' if request.endpoint == 'driver_bp.dashboard' else '' }}">
+                            Driver Dashboard
+                        </a>
+                {% endif %}
+            </ul>
+        </li>
+
+        {# --- REMAINDER OF ROLE-SPECIFIC LINKS (AFTER DASHBOARDS) --- #}
+
+        {# --- Administrator Links (Other than Dashboard) --- #}
+        {% if current_user.is_authenticated and current_user.USER_TYPE == 'administrator' %}
+            <li>
+                {% set account_endpoints = ['administrator_bp.accounts', 'administrator_bp.add_user', 'administrator_bp.edit_user', 'administrator_bp.disabled_accounts', 'administrator_bp.locked_users', 'administrator_bp.unlock'] %}
+                <a href="{{ url_for('administrator_bp.accounts') }}" class="sidebar-link {{ 'active' if request.endpoint in account_endpoints else '' }}">
+                    Manage Accounts
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('administrator_bp.audit_menu') }}" class="sidebar-link {{ 'active' if 'audit' in request.endpoint else '' }}">
+                    Audit Log
+                </a>
+            </li>
+        {% endif %}
+
+        {# --- Sponsor Links (Other than Dashboard) --- #}
+        {% if current_user.is_authenticated and current_user.USER_TYPE == 'sponsor' %}
+            <li>
+                {% set sponsor_driver_endpoints = ['sponsor_bp.list__sponsor_users', 'sponsor_bp.add_user', 'sponsor_bp.create_user'] %}
+                <a href="{{ url_for('sponsor_bp.driver_management') }}" class="sidebar-link {{ 'active' if request.endpoint in sponsor_driver_endpoints else '' }}">
+                    Manage Drivers
+                </a>
+            </li>
+             <li>
+                <a href="{{ url_for('sponsor_bp.review_driver_applications') }}" class="sidebar-link {{ 'active' if request.endpoint == 'sponsor_bp.review_driver_applications' else '' }}">
+                    Review Applications
+                </a>
+            </li>
+        {% endif %}
+
+        {# --- Driver Links (Other than Dashboard) --- #}
+        {% if current_user.is_authenticated and current_user.USER_TYPE == 'driver' %}
+            <li>
+                <a href="{{ url_for('driver_bp.point_history') }}" class="sidebar-link {{ 'active' if request.endpoint == 'driver_bp.point_history' else '' }}">
+                    Point History
+                </a>
+            </li>
+            <li>
+                {% set driver_settings_endpoints = ['driver_bp.settings', 'driver_bp.update_info', 'driver_bp.addresses', 'driver_bp.address_form'] %}
+                <a href="{{ url_for('driver_bp.settings') }}" class="sidebar-link {{ 'active' if request.endpoint in driver_settings_endpoints else '' }}">
+                    Account Settings
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</aside>

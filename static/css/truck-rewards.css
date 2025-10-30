@@ -1,48 +1,112 @@
-body {
-  font-family: Arial, sans-serif;
-  margin: 2rem;
-  background: #f9f9f9;
-}
-.product-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-}
-.product-card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 1rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  text-align: center;
-}
-.product-card img {
-  max-width: 100%;
-  height: 200px;
-  object-fit: contain;
-  margin-bottom: 1rem;
-}
-.title {
-  font-size: 1.1rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}
-.price {
-  color: green;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}
-.points {
-  color: #555;
-  margin-bottom: 1rem;
-}
-button {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-}
-button:hover {
-  background: #0056b3;
-}
+/* Truck Rewards – Points Store (scoped)
+   NOTE: All rules are scoped under `.points-store` to avoid overriding the app shell.
+   Uses theme tokens from theme.css for consistent colors & dark-mode support. */
+
+   .points-store {
+    /* Local section spacing only */
+    margin: 0;                /* don't fight global body/layout */
+    padding: 0;
+    background: transparent;  /* inherit app background */
+    color: var(--text);
+    font: inherit;
+  }
+  
+  /* Search form layout inside the store */
+  .points-store #search-form {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .points-store #search-form input[type="text"],
+  .points-store #search-form input[type="number"] {
+    max-width: none;
+  }
+  
+  /* Product grid */
+  .points-store .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  /* Product card */
+  .points-store .product-card {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: var(--shadow-raised);
+    text-align: center;
+  }
+  
+  .points-store .product-card img {
+    max-width: 100%;
+    height: 200px;
+    object-fit: contain;
+    margin-bottom: 1rem;
+  }
+  
+  /* Text bits */
+  .points-store .title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
+  
+  .points-store .price {
+    color: var(--brand);                 /* use brand green */
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  
+  .points-store .points {
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+  
+  /* Buttons (scoped) */
+  .points-store .btn,
+  .points-store button {
+    background: var(--brand);
+    color: var(--text-on-brand);         /* ensures AA contrast on green */
+    border: 1px solid transparent;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  
+  .points-store .btn:hover,
+  .points-store button:hover,
+  .points-store .btn:focus-visible,
+  .points-store button:focus-visible {
+    background: var(--brand-accent);     /* lime hover */
+    color: var(--text-on-brand);
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+  
+  /* If you need a neutral variant */
+  .points-store .btn-outline {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .points-store .btn-outline:hover,
+  .points-store .btn-outline:focus-visible {
+    background: var(--sidebar-hover-bg);
+    color: #fff;
+  }
+  
+  /* Responsive tweaks */
+  @media (max-width: 480px) {
+    .points-store .product-card img {
+      height: 160px;
+    }
+  }
+  

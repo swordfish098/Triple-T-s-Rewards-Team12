@@ -1,0 +1,34 @@
+<form method="get" action="{{ url_for('administrator_bp.view_audit_logs') }}" class="filter-bar">
+  <!-- Keep the category (login, driver_points, sales_by_sponsor, etc.) -->
+  <input type="hidden" name="event_type" value="{{ event_type }}">
+
+  <div style="display:flex; gap:1rem; align-items:flex-end;">
+    <div>
+      <label for="start">Start</label>
+      <input type="date" id="start" name="start" value="{{ start or '' }}">
+    </div>
+
+    <div>
+      <label for="end">End</label>
+      <input type="date" id="end" name="end" value="{{ end or '' }}">
+    </div>
+
+    <div>
+      <button type="submit" class="btn btn-primary">Apply</button>
+      <a class="btn btn-outline" href="{{ url_for('administrator_bp.view_audit_logs', event_type=event_type) }}">
+        Clear
+      </a>
+    </div>
+  </div>
+</form>
+
+
+<style>
+  .filter-bar { display:flex; align-items:center; gap:.75rem; margin:.5rem 0 1rem; }
+  .filter-toggle { display:inline-flex; align-items:center; gap:.4rem; padding:.35rem .6rem; border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:.4rem; cursor:pointer; }
+  .filter-toggle:hover { filter: brightness(1.05); }
+  .filter-panel { display:flex; flex-wrap:wrap; align-items:end; gap:.6rem 1rem; padding:.6rem; border:1px solid var(--border); background:var(--surface); border-radius:.5rem; }
+  .filter-panel label { display:flex; flex-direction:column; font-size:.9rem; gap:.25rem; min-width: 200px; }
+  .filter-panel input[type="date"], .filter-panel input[type="text"], .filter-panel select { padding:.35rem .45rem; border:1px solid var(--border); border-radius:.35rem; background:var(--bg); color:var(--text); }
+  .custom-dates { display:flex; gap:.6rem; }
+</style>

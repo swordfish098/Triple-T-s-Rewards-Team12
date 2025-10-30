@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Send Message</h2>
+
+{# GET form just to change the role filter #}
+<form method="get" action="{{ url_for('notification_bp.send_message') }}" id="roleForm"
+      style="margin:.5rem 0 1rem;">
+  <label>Send to:
+    <select name="role" onchange="this.form.submit()">
+      <option value="all"           {{ 'selected' if role=='all' }}>All users</option>
+      <option value="driver"        {{ 'selected' if role=='driver' }}>Drivers</option>
+      <option value="sponsor"       {{ 'selected' if role=='sponsor' }}>Sponsors</option>
+      <option value="administrator" {{ 'selected' if role=='administrator' }}>Administrators</option>
+    </select>
+  </label>
+</form>
+
+{# POST form to actually send the message #}
+<form method="post" action="{{ url_for('notification_bp.send_message') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="role" value="{{ role }}">
+
+  <label><input type="checkbox" name="send_all" id="send_all"> Send to everyone</label>
+
+  <div id="pick-recipients" style="max-height:260px; overflow:auto; border:1px solid var(--border); padding:.5rem; border-radius:.5rem;">
+    {% for u in users %}
+      <label style="display:block; padding:.15rem 0;">
+        <input type="checkbox" name="recipients" value="{{ u.USER_CODE }}">
+        {{ u.USERNAME }}
+        <small style="opacity:.6;">({{ u.USER_TYPE.name if u.USER_TYPE else '' }})</small>
+      </label>
+    {% else %}
+      <em>No users in this group.</em>
+    {% endfor %}
+  </div>
+
+  <div style="margin-top:1rem;">
+    <textarea name="message" rows="3" required style="width:100%;"></textarea>
+  </div>
+
+  <button type="submit" class="btn btn-primary" style="margin-top:.75rem;">Send</button>
+</form>
+
+<script>
+  const sendAll = document.getElementById("send_all");
+  const pick = document.getElementById("pick-recipients");
+  function togglePick() {
+    const boxes = pick.querySelectorAll("input[type=checkbox]");
+    pick.style.opacity = sendAll.checked ? 0.5 : 1;
+    boxes.forEach(b => b.disabled = sendAll.checked);
+  }
+  if (sendAll) { sendAll.addEventListener("change", togglePick); togglePick(); }
+</script>
+
+{% endblock %}

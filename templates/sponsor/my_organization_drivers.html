@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <a href="{{ url_for('sponsor_bp.dashboard') }}" class="btn btn-outline">← Back to Dashboard</a>
+    <h2 class="mb-3">Accepted Drivers in My Organization</h2>
+    <p class="text-muted">This list shows only the drivers you have officially accepted (STATUS='Accepted').</p>
+
+    {% if drivers %}
+    <table class="table table-striped table-hover">
+        <thead class="thead-dark">
+            <tr>
+                <th>Driver Name</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Current Points</th>
+                <th>Action</th> 
+            </tr>
+        </thead>
+        <tbody>
+            {# Loop through the 'drivers' list passed from the Python route #}
+            {% for driver in drivers %}
+            <tr>
+                <td>{{ driver.FNAME }} {{ driver.LNAME }}</td>
+                <td>{{ driver.USERNAME }}</td>
+                <td>{{ driver.EMAIL }}</td>
+                <td><span class="badge bg-primary">{{ driver.POINTS }}</span></td>
+                <td>
+                    <a href="{{ url_for('sponsor_bp.manage_points_page') }}?driver_id={{ driver.USER_CODE }}" 
+                       class="btn btn-sm btn-info">Manage Points</a>
+
+                    <form method="POST" 
+                          action="{{ url_for('impersonation_bp.start_impersonation', target_id=driver.USER_CODE) }}" 
+                          style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Impersonate</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-warning" role="alert">
+        🛑 You do not currently have any accepted drivers in your organization.
+        <br>
+        <a href="{{ url_for('sponsor_bp.review_driver_applications') }}" class="alert-link">Click here to review pending applications.</a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
