@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from flask import current_app
-from models import db, User, Sponsor, Driver, Role, AuditLog, Organization
+from models import db, User, Sponsor, Driver, Role, AuditLog, Organization, DriverApplication
 
 class BulkLoadProcessor:
     """
@@ -221,6 +221,7 @@ class BulkLoadProcessor:
                 POINTS=0,
                 wants_point_notifications=True,
                 wants_order_notifications=True,
+                wants_security_notifications=True,
                 IS_ACTIVE=1,
                 FAILED_ATTEMPTS=0,
                 IS_LOCKED_OUT=0
@@ -234,8 +235,8 @@ class BulkLoadProcessor:
             
             # Create the sponsor
             new_sponsor = Sponsor(
-                SPONSOR_ID=new_user.USER_CODE,
-                ORG_NAME=org_name,
+                USER_CODE=new_user.USER_CODE,
+                ORG_ID=existing_org.ORG_ID,
                 STATUS="Pending"
             )
             
@@ -293,6 +294,7 @@ class BulkLoadProcessor:
                 POINTS=0,
                 wants_point_notifications=True,
                 wants_order_notifications=True,
+                wants_security_notifications=True,
                 IS_ACTIVE=1,
                 FAILED_ATTEMPTS=0,
                 IS_LOCKED_OUT=0
@@ -413,14 +415,22 @@ class BulkLoadProcessor:
         from flask_login import current_user
         
         # Get the current sponsor's organization
-        current_sponsor = Sponsor.query.filter_by(SPONSOR_ID=current_user.USER_CODE).first()
+        current_sponsor = Sponsor.query.filter_by(USER_CODE=current_user.USER_CODE).first()
         if not current_sponsor:
             self.results['failed'] += 1
             self._log_result(line_num, 'S', 'Failed', f'{first_name} {last_name} ({email})', 
                            'Current user is not a valid sponsor')
             return
+        
+        # Get the organization from the sponsor's ORG_ID
+        organization = Organization.query.filter_by(ORG_ID=current_sponsor.ORG_ID).first()
+        if not organization:
+            self.results['failed'] += 1
+            self._log_result(line_num, 'S', 'Failed', f'{first_name} {last_name} ({email})', 
+                           f'Organization not found for sponsor ORG_ID: {current_sponsor.ORG_ID}')
+            return
             
-        org_name = current_sponsor.ORG_NAME
+        org_name = organization.ORG_NAME
         
         # Check if email already exists
         existing_user = User.query.filter_by(EMAIL=email).first()
@@ -444,9 +454,9 @@ class BulkLoadProcessor:
                 LNAME=last_name,
                 EMAIL=email,
                 CREATED_AT=datetime.now(),
-                POINTS=0,
                 wants_point_notifications=True,
                 wants_order_notifications=True,
+                wants_security_notifications=True,
                 IS_ACTIVE=1,
                 FAILED_ATTEMPTS=0,
                 IS_LOCKED_OUT=0
@@ -460,8 +470,8 @@ class BulkLoadProcessor:
             
             # Create the sponsor
             new_sponsor = Sponsor(
-                SPONSOR_ID=new_user.USER_CODE,
-                ORG_NAME=org_name,
+                USER_CODE=new_user.USER_CODE,
+                ORG_ID=organization.ORG_ID,
                 STATUS="Pending"
             )
             
@@ -496,14 +506,22 @@ class BulkLoadProcessor:
         from flask_login import current_user
         
         # Get the current sponsor's organization
-        current_sponsor = Sponsor.query.filter_by(SPONSOR_ID=current_user.USER_CODE).first()
+        current_sponsor = Sponsor.query.filter_by(USER_CODE=current_user.USER_CODE).first()
         if not current_sponsor:
             self.results['failed'] += 1
             self._log_result(line_num, 'D', 'Failed', f'{first_name} {last_name} ({email})', 
                            'Current user is not a valid sponsor')
             return
             
-        org_name = current_sponsor.ORG_NAME
+        # Get the organization from the sponsor's ORG_ID
+        organization = Organization.query.filter_by(ORG_ID=current_sponsor.ORG_ID).first()
+        if not organization:
+            self.results['failed'] += 1
+            self._log_result(line_num, 'D', 'Failed', f'{first_name} {last_name} ({email})', 
+                           f'Organization not found for sponsor ORG_ID: {current_sponsor.ORG_ID}')
+            return
+        
+        org_name = organization.ORG_NAME
         
         # Check if email already exists
         existing_user = User.query.filter_by(EMAIL=email).first()
@@ -525,9 +543,9 @@ class BulkLoadProcessor:
                 LNAME=last_name,
                 EMAIL=email,
                 CREATED_AT=datetime.now(),
-                POINTS=0,
                 wants_point_notifications=True,
                 wants_order_notifications=True,
+                wants_security_notifications=True,
                 IS_ACTIVE=1,
                 FAILED_ATTEMPTS=0,
                 IS_LOCKED_OUT=0
@@ -546,6 +564,19 @@ class BulkLoadProcessor:
             )
             
             db.session.add(new_driver)
+            db.session.commit()
+            
+            # Automatically create and accept a DriverApplication to connect the driver to the sponsor's organization
+            # We already have the organization from the earlier lookup
+            driver_application = DriverApplication(
+                DRIVER_ID=new_user.USER_CODE,
+                ORG_ID=organization.ORG_ID,  # Link to the sponsor's organization
+                STATUS="Accepted",  # Automatically accept since sponsor created the driver
+                REASON="Created via bulk loading by sponsor",
+                APPLIED_AT=datetime.utcnow()
+            )
+            
+            db.session.add(driver_application)
             db.session.commit()
             
             # Log the event

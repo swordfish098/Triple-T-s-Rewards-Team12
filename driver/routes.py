@@ -2,9 +2,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from common.decorators import role_required
-from common.logging import DRIVER_POINTS
-from models import Role, AuditLog, User, db, Sponsor, DriverApplication, Address, StoreSettings, Driver, DriverSponsorAssociation
+from common.logging import DRIVER_POINTS, log_audit_event, LOGIN_EVENT
+from models import Role, AuditLog, User, db, Sponsor, DriverApplication, Address, StoreSettings, Driver, Notification, LOCKOUT_ATTEMPTS, Organization, DriverSponsorAssociation
 from extensions import bcrypt
+from datetime import datetime
 
 # Blueprint for driver-related routes
 driver_bp = Blueprint('driver_bp', __name__, template_folder="../templates")
@@ -13,19 +14,58 @@ driver_bp = Blueprint('driver_bp', __name__, template_folder="../templates")
 @driver_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
 
-        # Look up user by USERNAME
         user = User.query.filter_by(USERNAME=username).first()
-
-        # Check password with bcrypt
-        if user and user.check_password(password):
-            login_user(user)
-            flash("Login successful!", "success")
-            return redirect(url_for('driver_bp.dashboard'))
-        else:
+        ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+        
+        if not user:
             flash("Invalid username or password", "danger")
+            log_audit_event(LOGIN_EVENT, f"FAIL user={username} ip={ip}")
+            return render_template('driver/login.html')
+        
+        if user.is_account_locked():
+            if user.LOCKED_REASON == "admin":
+                until = user.LOCKOUT_TIME.strftime("%Y-%m-%d %H:%M:%S") if user.LOCKOUT_TIME else "later"
+                flash(f"Your account has been locked by an administrator until {until}.", "danger")
+                log_audit_event(LOGIN_EVENT, f"user={user.USERNAME} ip={ip} reason=locked")
+                return render_template('driver/login.html')
+            else:
+                flash("Account locked. Please Contact your Administrator.", "danger")
+                log_audit_event(LOGIN_EVENT, f"user={user.USERNAME} ip={ip} reason=locked")
+                return render_template('driver/login.html')
+        
+        if not user.check_password(password):
+            user.register_failed_attempt()
+            db.session.commit()
+            remaining = max(0, LOCKOUT_ATTEMPTS - user.FAILED_ATTEMPTS)
+            flash(f"Invalid username or password. {remaining} attempts remaining.", "danger")
+            log_audit_event(LOGIN_EVENT, f"user={user.USERNAME} ip={ip} attempts={user.FAILED_ATTEMPTS}")
+            
+            # Send security notification for failed login attempts
+            if user.wants_security_notifications:
+                attempt_time = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+                message = f"Suspicious login activity detected on your account at {attempt_time}. Failed login attempt from IP: {ip}. If this wasn't you, please contact support immediately."
+                try:
+                    Notification.create_notification(
+                        recipient_code=user.USER_CODE,
+                        sender_code=user.USER_CODE,  # System notification from user to self
+                        message=message
+                    )
+                except Exception as e:
+                    # Log the error but don't fail the login process
+                    log_audit_event("SECURITY_NOTIFICATION_FAILED", f"Failed to send security notification to user {user.USERNAME}: {str(e)}")
+            
+            return render_template('driver/login.html')
+        
+        # On successful login
+        user.clear_failed_attempts()
+        db.session.commit()
+        login_user(user)
+        flash("Login successful!", "success")
+        log_audit_event(LOGIN_EVENT, f"user={user.USERNAME} role={user.USER_TYPE} ip={ip}")
+        return redirect(url_for('driver_bp.dashboard'))
 
     # Looks inside templates/driver/login.html
     return render_template('driver/login.html')
@@ -77,9 +117,11 @@ def settings():
     if request.method == 'POST':
         wants_points = request.form.get('wants_point_notifications') == 'on'
         wants_orders = request.form.get('wants_order_notifications') == 'on'
-
+        wants_security = request.form.get('wants_security_notifications') == 'on'
+        
         current_user.wants_point_notifications = wants_points
         current_user.wants_order_notifications = wants_orders
+        current_user.wants_security_notifications = wants_security
         db.session.commit()
 
         flash('Your settings have been updated!', 'success')
@@ -183,23 +225,33 @@ def change_password():
 @driver_bp.route("/driver_app", methods=["GET", "POST"])
 @login_required
 def apply_driver():
+    # Get all organizations that have approved sponsors
+    organizations = Organization.query.join(Sponsor).filter(Sponsor.STATUS == "Approved").all()
+
     if request.method == "POST":
-        sponsor_id = request.form["sponsor_id"]
+        org_id = request.form["org_id"]
         reason = request.form.get("reason", "")
         
         driver_profile = Driver.query.get(current_user.USER_CODE)
         license_number = driver_profile.LICENSE_NUMBER if driver_profile else None
 
-        # This check now correctly looks for only Pending or Accepted applications
-        existing_app = DriverApplication.query.filter(
-            DriverApplication.DRIVER_ID == current_user.USER_CODE,
-            DriverApplication.SPONSOR_ID == sponsor_id,
-            DriverApplication.STATUS.in_(["Pending", "Accepted"])
+        existing = DriverApplication.query.filter_by(
+            DRIVER_ID=current_user.USER_CODE,
+            ORG_ID=org_id
         ).first()
 
-        if existing_app:
-            flash(f"You already have a '{existing_app.STATUS}' application with this sponsor.", "warning")
-            return redirect(url_for("driver_bp.dashboard"))
+        if existing:
+            flash("You already applied to this organization.", "warning")
+        else:
+            application = DriverApplication(
+                DRIVER_ID=current_user.USER_CODE,
+                ORG_ID=org_id,
+                REASON=reason,
+                STATUS="Pending"
+            )
+            db.session.add(application)
+            db.session.commit()
+            flash("Application submitted successfully! Await sponsor review.", "success")
 
         application = DriverApplication(
             DRIVER_ID=current_user.USER_CODE,
@@ -213,24 +265,7 @@ def apply_driver():
         flash("Application submitted successfully! Await sponsor review.", "success")
         return redirect(url_for("driver_bp.dashboard"))
 
-    # --- THIS IS THE FINAL, CORRECTED GET REQUEST LOGIC ---
-    
-    # 1. Get the IDs of all sponsors the driver has a PENDING or ACCEPTED application with.
-    #    A driver should be able to re-apply if they were rejected.
-    unavailable_sponsor_ids = {
-        app.SPONSOR_ID for app in DriverApplication.query.filter(
-            DriverApplication.DRIVER_ID == current_user.USER_CODE,
-            DriverApplication.STATUS.in_(["Pending", "Accepted"])
-        ).all()
-    }
-
-    # 2. Get all sponsors that are approved AND not in the user's unavailable list.
-    available_sponsors = Sponsor.query.filter(
-        Sponsor.STATUS == "Approved",
-        ~Sponsor.SPONSOR_ID.in_(unavailable_sponsor_ids)
-    ).all()
-
-    return render_template("driver/driver_app.html", sponsors=available_sponsors)
+    return render_template("driver/driver_app.html", organizations=organizations)
 
 # Address Management
 @driver_bp.route('/addresses')

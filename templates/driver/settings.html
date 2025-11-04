@@ -37,6 +37,16 @@
       </label>
     </section>
 
+    <section class="form-group-checkbox">
+      <input type="checkbox"
+             id="wants_security_notifications"
+             name="wants_security_notifications"
+             {% if current_user.wants_security_notifications %}checked{% endif %}>
+      <label for="wants_security_notifications">
+        Receive notifications for suspicious login attempts
+      </label>
+    </section>
+
     <div class="spacer"></div>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Save Settings</button>

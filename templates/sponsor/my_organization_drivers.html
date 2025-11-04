@@ -30,6 +30,14 @@
                        class="btn btn-sm btn-info">Manage Points</a>
 
                     <form method="POST" 
+                          action="{{ url_for('sponsor_bp.reset_driver_password', driver_id=driver.USER_CODE) }}" 
+                          style="display:inline;" 
+                          onsubmit="return confirm('Are you sure you want to reset {{ driver.USERNAME }}\'s password? This will generate a new temporary password.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-warning">Reset Password</button>
+                    </form>
+
+                    <form method="POST" 
                           action="{{ url_for('impersonation_bp.start_impersonation', target_id=driver.USER_CODE) }}" 
                           style="display:inline;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

@@ -6,16 +6,15 @@ from common.logging import log_audit_event, DRIVER_POINTS
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from models import User, Role, StoreSettings, db, DriverApplication, Sponsor, Notification, DriverSponsorAssociation, Driver
-from extensions import db
+from extensions import db, bcrypt
 import secrets
 import string
-import bcrypt
 
 # Blueprint for sponsor-related routes
 sponsor_bp = Blueprint('sponsor_bp', __name__, template_folder="../templates")
 
-#def driver_query_for_sponsor(sponsor_id):
-#    return db.session.query(User).filter(User.USER_TYPE == Role.DRIVER, User.SPONSOR_ID == sponsor_id).all()
+def driver_query_for_sponsor(organization_id):
+    return db.session.query(User).filter(User.USER_TYPE == Role.DRIVER, User.ORG_ID == organization_id).all()
 
 def next_user_code():
     last_user = User.query.order_by(User.USER_CODE.desc()).first()
@@ -298,48 +297,15 @@ def add_user():
     # Show the form to add a new driver
     return render_template('sponsor/add_user.html')
 
-# Sponsor Applies for Organziation
-@sponsor_bp.route('/apply_for_organization', methods=['GET', 'POST'])
-@role_required(Role.SPONSOR, allow_admin=True)
-@login_required
-def apply_for_organization():
-    """Route for sponsors to submit or update their organization details for admin approval."""
-    
-    # 1. Fetch the current Sponsor organization record using the logged-in user's ID
-    # Since they are a sponsor, this record should exist.
-    sponsor_org = Sponsor.query.get(current_user.USER_CODE)
-    
-    if request.method == 'POST':
-        # User input from the form
-        org_name = (request.form.get("org_name") or "").strip()
-
-        # Update the Organization in ORGANIZATION table
-        sponsor_org.ORG_NAME = org_name
-        
-        # Set/Reset Status to Pending if not already Approved
-        if sponsor_org.STATUS != "Approved":
-            sponsor_org.STATUS = "Pending"
-            flash("Application submitted and is now pending admin review.", "success")
-        else:
-            # If they were already approved, just update the name
-            flash("Organization details updated.", "success")
-        
-        db.session.commit()
-        
-        return redirect(url_for('sponsor_bp.dashboard'))
-
-    # Show the form, passing the existing record for pre-filling
-    return render_template('sponsor/apply_for_organization.html', sponsor=sponsor_org)
-
-def get_accepted_drivers_for_sponsor(sponsor_user_code):
+def get_accepted_drivers_for_sponsor(org_id):
     """
-    Retrieves all drivers who have an 'Accepted' application status
-    with the given sponsor_user_code using a two-step query for stability.
+    Retrieves all drivers who have an 'Accepted' application status 
+    with the given organization ID using a two-step query for stability.
     """
-    # Step 1: Filter the DriverApplication table for accepted apps for this sponsor
+    # Step 1: Filter the DriverApplication table for accepted apps for this organization
     accepted_apps = DriverApplication.query.filter(
-        DriverApplication.SPONSOR_ID == sponsor_user_code,
-        DriverApplication.STATUS == "Accepted"
+        DriverApplication.ORG_ID == org_id,
+        DriverApplication.STATUS == "Accepted" 
     ).all()
 
     # If no accepted applications, return an empty list immediately
@@ -357,14 +323,26 @@ def get_accepted_drivers_for_sponsor(sponsor_user_code):
 @sponsor_bp.route('/drivers', methods=['GET'])
 @role_required(Role.SPONSOR, allow_admin=True)
 def driver_management():
-    drivers = get_accepted_drivers_for_sponsor(current_user.USER_CODE)
+    # Get the sponsor record to access ORG_ID
+    sponsor = Sponsor.query.filter_by(USER_CODE=current_user.USER_CODE).first()
+    if not sponsor:
+        flash("Sponsor record not found.", "danger")
+        return redirect(url_for('sponsor_bp.dashboard'))
+    
+    drivers = get_accepted_drivers_for_sponsor(sponsor.ORG_ID)
     return render_template('sponsor/my_organization_drivers.html', drivers=drivers)
 
 # Sponsor Review Applications
 @sponsor_bp.route("/applications")
 @login_required
 def review_driver_applications():
-    apps = DriverApplication.query.filter_by(SPONSOR_ID=current_user.USER_CODE, STATUS="Pending").all()
+    # Get the sponsor record to access ORG_ID
+    sponsor = Sponsor.query.filter_by(USER_CODE=current_user.USER_CODE).first()
+    if not sponsor:
+        flash("Sponsor record not found.", "danger")
+        return redirect(url_for('sponsor_bp.dashboard'))
+    
+    apps = DriverApplication.query.filter_by(ORG_ID=sponsor.ORG_ID, STATUS="Pending").all()
     return render_template("sponsor/review_driver_applications.html", applications=apps)
 
 @sponsor_bp.route("/applications/<int:app_id>/<decision>", methods=['POST']) # <-- ADD THIS
@@ -443,6 +421,60 @@ def update_info():
             return redirect(url_for('sponsor_bp.update_info'))
 
     return render_template('sponsor/update_info.html', user=current_user, sponsor=sponsor)
+
+# Reset Driver Password
+@sponsor_bp.route('/reset_driver_password/<int:driver_id>', methods=['POST'])
+@role_required(Role.SPONSOR, allow_admin=True)
+def reset_driver_password(driver_id):
+    """Reset a driver's password to a temporary password"""
+    # Get the sponsor record to verify organization
+    sponsor = Sponsor.query.filter_by(USER_CODE=current_user.USER_CODE).first()
+    if not sponsor:
+        flash("Sponsor record not found.", "danger")
+        return redirect(url_for('sponsor_bp.driver_management'))
+    
+    # Get the driver
+    driver = User.query.get_or_404(driver_id)
+    
+    # Verify the driver belongs to this sponsor's organization
+    driver_app = DriverApplication.query.filter_by(
+        DRIVER_ID=driver.USER_CODE, 
+        ORG_ID=sponsor.ORG_ID, 
+        STATUS="Accepted"
+    ).first()
+    
+    if not driver_app:
+        flash("You can only reset passwords for drivers in your organization.", "danger")
+        return redirect(url_for('sponsor_bp.driver_management'))
+    
+    try:
+        # Generate a new temporary password using the User model's method
+        temp_password = driver.admin_set_new_pass()
+        
+        db.session.commit()
+        
+        # Log the event
+        log_audit_event(
+            "PASSWORD_RESET_BY_SPONSOR",
+            f"Sponsor {current_user.USERNAME} reset password for driver {driver.USERNAME}"
+        )
+        
+        # Send notification to driver if they want security notifications
+        if getattr(driver, "wants_security_notifications", True):
+            Notification.create_notification(
+                recipient_code=driver.USER_CODE,
+                sender_code=current_user.USER_CODE,
+                message=f"Your password has been reset by {current_user.USERNAME}. Please log in with your new temporary password and change it immediately."
+            )
+        
+        flash(f"✅ Password reset successfully for {driver.USERNAME}. Temporary password: {temp_password}", "success")
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error resetting password: {str(e)}")  # For debugging
+        flash(f"An error occurred while resetting the password: {str(e)}", "danger")
+    
+    return redirect(url_for('sponsor_bp.driver_management'))
 
 # Update Password
 @sponsor_bp.route('/change_password', methods=['GET', 'POST'])
