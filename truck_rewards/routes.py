@@ -65,7 +65,10 @@ def products(sponsor_id):
     search_query = request.args.get('q')
     min_price = request.args.get('min_price')
     max_price = request.args.get('max_price')
+    sort_by = request.args.get('sort')
     access_token = get_ebay_access_token()
+
+    print(f"Received sort parameter: {sort_by}")
 
     if not access_token:
         return jsonify({"error": "Could not authenticate with eBay API"}), 500
@@ -74,12 +77,25 @@ def products(sponsor_id):
     else:
         search_url = "https://api.ebay.com/buy/browse/v1/item_summary/search"
     headers = { "Authorization": f"Bearer {access_token}" }
-    params = { "limit": 20 }
+    params = {
+        "limit": 20,
+        "category_ids": category_id
+    }
     if search_query:
         params['q'] = search_query
-        params['category_ids'] = category_id
-    else:
-        params['category_ids'] = category_id
+    
+    # ** NEW: Add sorting to the API request **
+    sort_in_python = None
+    if sort_by:
+        if sort_by == 'alpha_asc':
+            sort_in_python = 'asc'
+        elif sort_by == 'alpha_desc':
+            sort_in_python = 'desc'
+        elif sort_by == 'price_asc':
+            params['sort'] = 'price'        # eBay API for Price Low-High
+        elif sort_by == 'price_desc':
+            params['sort'] = 'priceDesc'       # eBay API for Price High-Low
+    
     filters = []
     if min_price or max_price:
         price_range = f"price:[{min_price or ''}..{max_price or ''}]"
@@ -103,6 +119,11 @@ def products(sponsor_id):
                     "image": item.get("image", {}).get("imageUrl", ""),
                     "pointsEquivalent": int(price_float * point_ratio)
                 })
+
+        if sort_in_python:
+            products.sort(key=lambda p: (p['title'] or '').lower(), reverse=(sort_in_python=='desc'))
+            print("Sorted products titles:", [p['title'] for p in products[:5]])
+            
         print(f"Products found: {len(products)}")
         return jsonify(products)
     except Exception as e:

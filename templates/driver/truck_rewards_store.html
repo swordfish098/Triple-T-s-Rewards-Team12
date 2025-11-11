@@ -21,17 +21,24 @@
 
 
   <section class="points-store">
-    {# The search form remains the same as the original store #}
-    <div style="margin-bottom: 2rem; max-width: 500px;">
-      <form id="search-form" style="display: flex; gap: 0.5rem; max-width: none;">
-        <input type="text" id="search-input" placeholder="Search for items..." style="width: 100%;">
-        <input type="number" id="min-price" placeholder="Min $" style="width: 80px;">
-        <input type="number" id="max-price" placeholder="Max $" style="width: 80px;">
-        <button type="submit" style="width: auto; padding: 0.4rem 1rem;">Search</button>
-      </form>
-    </div>
+    {# ** UPDATED FORM ** #}
+    <form id="search-form" style="display: flex; flex-wrap: wrap; gap: 0.5rem; max-width: none; margin-bottom: 2rem;">
+      <input type="text" id="search-input" placeholder="Search for items..." style="flex-grow: 1;">
+      <input type="number" id="min-price" placeholder="Min $" style="width: 80px;">
+      <input type="number" id="max-price" placeholder="Max $" style="width: 80px;">
+      
+      {# ** NEW SORTING DROPDOWN ** #}
+      <select id="sort-select" class="form-control" style="width: 150px;">
+        <option value="">Sort by Relevance</option>
+        <option value="alpha_asc">A-Z</option>
+        <option value="alpha_desc">Z-A</option>
+        <option value="price_asc">Price: Low to High</option>
+        <option value="price_desc">Price: High to Low</option>
+      </select>
+      
+      <button type="submit" class="btn btn-primary" style="width: auto; padding: 0.4rem 1rem;">Search</button>
+    </form>
 
-    {# This is where the products will be dynamically loaded by your JavaScript #}
     <div id="products" class="product-grid">
         </div>
   </section>

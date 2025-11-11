@@ -472,7 +472,7 @@ def review_sponsors():
 @login_required
 @role_required(Role.ADMINISTRATOR)
 def sponsor_decision(sponsor_id, decision):
-    sponsor = Sponsor.query.get_or_404(sponsor_id)
+    sponsor = Sponsor.query.filter_by(USER_CODE=sponsor_id).first_or_404()
     if decision == "approve":
         sponsor.STATUS = "Approved"
         # Removed: if sponsor_user: sponsor_user.IS_ACTIVE = 1 

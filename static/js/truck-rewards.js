@@ -1,26 +1,48 @@
+// This function will be called by the template to start the store with the right sponsor
 function initializeStore(sponsorId) {
-  loadProducts(sponsorId); 
-
   const searchForm = document.getElementById('search-form');
-  if (searchForm) {
-    searchForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const searchInput = document.getElementById('search-input');
-      const minPriceInput = document.getElementById('min-price');
-      const maxPriceInput = document.getElementById('max-price');
-      loadProducts(sponsorId, searchInput.value, minPriceInput.value, maxPriceInput.value);
-    });
+  const searchInput = document.getElementById('search-input');
+  const minPriceInput = document.getElementById('min-price');
+  const maxPriceInput = document.getElementById('max-price');
+  const sortSelect = document.getElementById('sort-select'); // Get the new dropdown
+
+  // Helper function to get all values and load products
+  function loadProductsFromForm() {
+      const query = searchInput.value;
+      const minPrice = minPriceInput.value;
+      const maxPrice = maxPriceInput.value;
+      const sort = sortSelect.value; // Get the sort value
+      console.log("Loading products with sort:", sort);
+      loadProducts(sponsorId, query, minPrice, maxPrice, sort); // Pass it
   }
+
+  // Load products initially (with default sort)
+  loadProductsFromForm(); 
+
+  // Listen for form submit (e.g., pressing Enter or clicking search)
+  searchForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      loadProductsFromForm();
+  });
+
+  // ** NEW: Listen for change in sort dropdown **
+  sortSelect.addEventListener('change', () => {
+      loadProductsFromForm();
+  });
 }
 
-async function loadProducts(sponsorId, query = '', minPrice = '', maxPrice = '') {
+async function loadProducts(sponsorId, query = '', minPrice = '', maxPrice = '', sort = '') {
   try {
+    // ** UPDATED: URL now includes the sort parameter **
     let url = `/truck-rewards/products/${sponsorId}?q=${encodeURIComponent(query)}`;
     if (minPrice) url += `&min_price=${encodeURIComponent(minPrice)}`;
     if (maxPrice) url += `&max_price=${encodeURIComponent(maxPrice)}`;
+    if (sort) url += `&sort=${encodeURIComponent(sort)}`;
 
     const response = await fetch(url);
     const products = await response.json();
+
+    console.log("Products order:", products.map(p => p.title).slice(0,5));
 
     const container = document.getElementById("products");
     container.innerHTML = "";
@@ -39,7 +61,6 @@ async function loadProducts(sponsorId, query = '', minPrice = '', maxPrice = '')
       const card = document.createElement("div");
       card.className = "product-card";
       const imageUrl = p.image || 'https://i.ebayimg.com/images/g/placeholder/s-l225.jpg';
-
       const productData = JSON.stringify(p).replace(/'/g, "&apos;");
 
       card.innerHTML = `

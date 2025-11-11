@@ -135,8 +135,11 @@ class Driver(db.Model):
     __tablename__ = 'DRIVERS'
     DRIVER_ID = db.Column(db.Integer, db.ForeignKey("USERS.USER_CODE", ondelete="CASCADE"), primary_key=True)
     LICENSE_NUMBER = db.Column(db.String(50), nullable=False)
-    # points = db.Column(db.Integer, default=0, nullable=False)
     applications = db.relationship("DriverApplication", back_populates="driver")
+    
+    # --- ADDED THESE RELATIONSHIPS ---
+    user_account = db.relationship("User", back_populates="driver_profile")
+    sponsor_associations = db.relationship("DriverSponsorAssociation", back_populates="driver")
 
 class Sponsor(db.Model):
     __tablename__ = "SPONSORS"
@@ -144,6 +147,10 @@ class Sponsor(db.Model):
     ORG_ID = db.Column(db.Integer, db.ForeignKey("ORGANIZATIONS.ORG_ID", ondelete="CASCADE"), nullable=False)
     STATUS = db.Column(db.Enum("Pending", "Approved", "Rejected", name="SPONSOR_STATUS"), default="Pending")
     organization = db.relationship("Organization", backref="sponsors")
+
+    # --- ADDED THESE RELATIONSHIPS ---
+    user_account = db.relationship("User", back_populates="sponsor_profile")
+    driver_associations = db.relationship("DriverSponsorAssociation", back_populates="sponsor")
 
 class Admin(db.Model):
     __tablename__ = "ADMIN"
@@ -166,18 +173,18 @@ class DriverSponsorAssociation(db.Model):
     __tablename__ = "DRIVER_SPONSOR_ASSOCIATION"
 
     driver_id = db.Column(db.Integer, db.ForeignKey("DRIVERS.DRIVER_ID"), primary_key=True)
-    sponsor_id = db.Column(db.Integer, db.ForeignKey("SPONSORS.SPONSOR_ID"), primary_key=True)
+    # ** THE FIX IS HERE **
+    sponsor_id = db.Column(db.Integer, db.ForeignKey("SPONSORS.USER_CODE"), primary_key=True)
     points = db.Column(db.Integer, default=0)
 
     driver = db.relationship("Driver", back_populates="sponsor_associations")
     sponsor = db.relationship("Sponsor", back_populates="driver_associations")
 
-
-
 class StoreSettings(db.Model):
     __tablename__ = 'STORE_SETTINGS'
     id = db.Column(db.Integer, primary_key=True)
-    sponsor_id = db.Column(db.Integer, db.ForeignKey('SPONSORS.SPONSOR_ID'), nullable=False, unique=True)
+    # ** THE FIX IS HERE **
+    sponsor_id = db.Column(db.Integer, db.ForeignKey('SPONSORS.USER_CODE'), nullable=False, unique=True)
     ebay_category_id = db.Column(db.String(50), nullable=False, default='2984')
     point_ratio = db.Column(db.Integer, nullable=False, default=10)
 
@@ -185,7 +192,8 @@ class CartItem(db.Model):
     __tablename__ = 'CART_ITEMS'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('USERS.USER_CODE'), nullable=False)
-    sponsor_id = db.Column(db.Integer, db.ForeignKey('SPONSORS.SPONSOR_ID'), nullable=False)
+    # ** THE FIX IS HERE **
+    sponsor_id = db.Column(db.Integer, db.ForeignKey('SPONSORS.USER_CODE'), nullable=False)
     item_id = db.Column(db.String(255), nullable=False)
     title = db.Column(db.String(255), nullable=False)
     price = db.Column(db.Float, nullable=False)
@@ -240,6 +248,7 @@ class WishlistItem(db.Model):
     title = db.Column(db.String(255), nullable=False)
     price = db.Column(db.Float, nullable=False)
     points = db.Column(db.Integer, nullable=False)
+    # ** FIXED TYPO HERE **
     image_url = db.Column(db.String(255), nullable=True)
 
 class Organization(db.Model):

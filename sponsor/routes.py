@@ -5,7 +5,7 @@ from common.decorators import role_required
 from common.logging import log_audit_event, DRIVER_POINTS
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
-from models import User, Role, StoreSettings, db, DriverApplication, Sponsor, Notification, DriverSponsorAssociation, Driver
+from models import User, Role, StoreSettings, db, DriverApplication, Sponsor, Notification, DriverSponsorAssociation, Driver, Organization
 from extensions import db, bcrypt
 import secrets
 import string
@@ -101,7 +101,11 @@ def list_sponsor_users():
 @sponsor_bp.route('/dashboard')
 @role_required(Role.SPONSOR, allow_admin=True)
 def dashboard():
-    return render_template('sponsor/dashboard.html')
+    sponsor = Sponsor.query.filter_by(USER_CODE=current_user.USER_CODE).first()
+    organization = None
+    if sponsor and sponsor.organization:
+        organization = sponsor.organization
+    return render_template('sponsor/dashboard.html', sponsor=sponsor, organization=organization)
 
 # Update Store Settings
 @sponsor_bp.route('/settings', methods=['GET', 'POST'])
@@ -129,10 +133,11 @@ def manage_points_page():
     """Display all drivers for awarding or removing points, with search and active/inactive filtering."""
     search_query = request.args.get("search", "").strip()
     status_filter = request.args.get("status", "").strip()
+    sort_by = request.args.get("sort", "username_asc")
 
     # Fetch all associations for this sponsor
-    sponsor = Sponsor.query.filter_by(SPONSOR_ID=current_user.USER_CODE).first()
-    associations = DriverSponsorAssociation.query.filter_by(sponsor_id=sponsor.SPONSOR_ID).all()
+    sponsor = Sponsor.query.filter_by(USER_CODE=current_user.USER_CODE).first()
+    associations = DriverSponsorAssociation.query.filter_by(sponsor_id=sponsor.USER_CODE).all()
 
     # Combine driver user info with their points
     driver_data = [
@@ -160,12 +165,18 @@ def manage_points_page():
             if getattr(d["user"], "IS_ACTIVE", 1) == 0
         ]
 
+    if sort_by == 'points_desc':
+        driver_data = sorted(driver_data, key=lambda d: d['points'], reverse=True)
+    elif sort_by == 'points_asc':
+        driver_data = sorted(driver_data, key=lambda d: d['points'])
+    else: # Default (username_asc)
+        driver_data = sorted(driver_data, key=lambda d: d['user'].USERNAME)
+
     # Calculate total and average points
     total_points = sum(d["points"] for d in driver_data)
     avg_points = round(total_points / len(driver_data), 2) if driver_data else 0
 
-    return render_template('sponsor/points.html', drivers=driver_data, total_points=total_points, avg_points=avg_points)
-
+    return render_template('sponsor/points.html', drivers=driver_data, total_points=total_points, avg_points=avg_points, current_sort=sort_by, search_query=search_query, status_filter=status_filter)
 
 
 
@@ -216,6 +227,10 @@ def manage_points(driver_id):
         flash(f"✅ Successfully awarded {points} points to {driver.USERNAME}.", "success")
 
     elif action == "remove":
+        if association.points < points:
+            flash(f"Cannot remove {points} points. Driver only has {association.points} points.", "danger")
+            return redirect(url_for('sponsor_bp.manage_points_page'))
+        
         association.points -= points
         db.session.commit()
 
@@ -233,7 +248,11 @@ def manage_points(driver_id):
 
         flash(f"⚠️ Removed {points} points from {driver.USERNAME}.", "info")
 
-    return redirect(url_for('sponsor_bp.manage_points_page'))
+    search = request.form.get('search_query', '')
+    status = request.form.get('status_filter', '')
+    sort = request.form.get('current_sort', 'username_asc')
+
+    return redirect(url_for('sponsor_bp.manage_points_page', search=search, status=status, sort=sort))
 
 
 
@@ -329,8 +348,57 @@ def driver_management():
         flash("Sponsor record not found.", "danger")
         return redirect(url_for('sponsor_bp.dashboard'))
     
-    drivers = get_accepted_drivers_for_sponsor(sponsor.ORG_ID)
-    return render_template('sponsor/my_organization_drivers.html', drivers=drivers)
+    sort_by = request.args.get('sort', 'username_asc')
+    search_query = request.args.get("search", "").strip()
+    
+    # Get all accepted driver IDs for this sponsor's organization
+    accepted_drivers = get_accepted_drivers_for_sponsor(sponsor.ORG_ID)
+
+    print(f"\n=== Sponsor ORG_ID: {sponsor.ORG_ID} ===")
+    print(f"Accepted drivers: {[d.USERNAME for d in accepted_drivers]}")
+
+    if not accepted_drivers:
+        # No drivers accepted yet
+        print("⚠️ No accepted drivers found.")
+        return render_template('sponsor/my_organization_drivers.html', drivers_with_points=[], current_sort=sort_by, search_query=search_query)
+
+    # 2. Get a dictionary of all points for this sponsor
+    points_associations = DriverSponsorAssociation.query.filter_by(sponsor_id=sponsor.USER_CODE).all()
+    points_map = {assoc.driver_id: assoc.points for assoc in points_associations}
+
+    print(f"Points map: {points_map}")
+
+    # 3. Combine the data, defaulting points to 0 if no association exists
+    driver_data = [
+        {
+            "user": driver,
+            "points": points_map.get(driver.USER_CODE, 0) # Get points from map, default to 0
+        }
+        for driver in accepted_drivers
+    ]
+
+    if search_query:
+        driver_data = [
+            d for d in driver_data
+            if getattr(d["user"], "USERNAME", "").lower() == search_query.lower()
+        ]
+
+    print("Driver data being sent to template:")
+    for d in driver_data:
+        print(f"  {d['user'].USERNAME} -> {d['points']} points")
+
+    # 4. Apply sorting to the list
+    if sort_by == 'points_desc':
+        driver_data.sort(key=lambda d: d['points'], reverse=True)
+    elif sort_by == 'points_asc':
+        driver_data.sort(key=lambda d: d['points'])
+    else: # Default (username_asc)
+        driver_data.sort(key=lambda d: d['user'].USERNAME)
+
+    print(f"✅ Final sorted driver list ({sort_by}): {[d['user'].USERNAME for d in driver_data]}")
+    print("===========================================\n")
+
+    return render_template('sponsor/my_organization_drivers.html', drivers_with_points=driver_data, current_sort=sort_by, search_query=search_query)
 
 # Sponsor Review Applications
 @sponsor_bp.route("/applications")
@@ -522,3 +590,69 @@ def view_my_store():
     """Renders the truck rewards store for the currently logged-in sponsor."""
     # The template needs the sponsor's ID to fetch the correct products.
     return render_template('driver/truck_rewards_store.html', sponsor_id=current_user.USER_CODE)
+
+@sponsor_bp.route('/apply_organization', methods=['GET', 'POST'])
+@login_required
+@role_required(Role.SPONSOR)
+def apply_for_organization():
+    """
+    Handles the application for an organization or updating an existing one.
+    """
+    # Find the sponsor's own record
+    sponsor = Sponsor.query.filter_by(USER_CODE=current_user.USER_CODE).first()
+    organization = None
+    if sponsor and sponsor.ORG_ID:
+        organization = Organization.query.get(sponsor.ORG_ID)
+
+    if request.method == 'POST':
+        org_name = request.form.get('org_name', '').strip()
+        if not org_name:
+            flash("Organization name is required.", "danger")
+            return redirect(url_for('sponsor_bp.apply_for_organization'))
+
+        # Check if an org with this name already exists
+        existing_org = Organization.query.filter_by(ORG_NAME=org_name).first()
+
+        if sponsor:
+            # This is an UPDATE
+            if organization:
+                # The sponsor is updating their existing organization's name
+                organization.ORG_NAME = org_name
+                db.session.add(organization)
+            elif existing_org:
+                # The sponsor is linking to an existing org
+                sponsor.ORG_ID = existing_org.ORG_ID
+            else:
+                # The sponsor is creating a new org
+                new_org = Organization(ORG_NAME=org_name, CREATED_AT=datetime.utcnow())
+                db.session.add(new_org)
+                db.session.flush() # Get the new ORG_ID
+                sponsor.ORG_ID = new_org.ORG_ID
+            
+            # Set status to Pending for admin approval
+            sponsor.STATUS = 'Pending'
+            db.session.add(sponsor)
+            
+        else:
+            # This is a NEW sponsor application (should be rare, but good to handle)
+            new_org_id = None
+            if existing_org:
+                new_org_id = existing_org.ORG_ID
+            else:
+                new_org = Organization(ORG_NAME=org_name, CREATED_AT=datetime.utcnow())
+                db.session.add(new_org)
+                db.session.flush()
+                new_org_id = new_org.ORG_ID
+
+            new_sponsor = Sponsor(
+                USER_CODE=current_user.USER_CODE,
+                ORG_ID=new_org_id,
+                STATUS='Pending'
+            )
+            db.session.add(new_sponsor)
+
+        db.session.commit()
+        flash('Your organization application has been submitted for review!', 'success')
+        return redirect(url_for('sponsor_bp.dashboard'))
+
+    return render_template('sponsor/apply_for_organization.html', sponsor=sponsor, organization=organization)

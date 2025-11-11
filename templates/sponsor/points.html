@@ -15,6 +15,7 @@
     <h2>Manage Driver Points</h2>
     <form id="filter-form" method="GET" action="{{ url_for('sponsor_bp.manage_points_page') }}" style="display:flex; flex-direction:column; gap:.5rem; margin-bottom:1rem;">
       <div style="display:flex; align-items:center; gap:.5rem;">
+        <input type="hidden" name="sort" value="{{ request.args.get('sort', '') }}">
         <input type="text" name="search" placeholder="Search by username..." value="{{ request.args.get('search', '') }}" aria-label="Search by username" class="form-control" style="flex:1;">
         <button type="submit" class="btn btn-outline-secondary">Search</button>
         <button id="filter-toggle" type="button" class="btn btn-outline-secondary" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center;" title="Filter options" aria-label="Filter options">
@@ -61,7 +62,23 @@
                 <th>Driver Name</th>
                 <th>Username</th>
                 <th>Email</th>
-                <th>Current Points</th>
+                <th style="cursor:pointer;">
+                  <a 
+                    href="{{ url_for('sponsor_bp.manage_points_page',
+                                      search=request.args.get('search', ''),
+                                      status=request.args.get('status', ''),
+                                      sort='points_desc' if request.args.get('sort') != 'points_desc' else 'points_asc') }}"
+                    style="color:#86C232; text-decoration:none; font-weight:600;">
+                    Current Points
+                    {% if request.args.get('sort') == 'points_desc' %}
+                      ▲
+                    {% elif request.args.get('sort') == 'points_asc' %}
+                      ▼
+                    {% else %}
+                      <i class="fa-solid fa-sort" style="color:#ccc; margin-left:4px;"></i>
+                    {% endif %}
+                  </a>
+                </th>
                 <th>Action</th>
             </tr>
         </thead>
